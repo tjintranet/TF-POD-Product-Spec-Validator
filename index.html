@@ -5,44 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>T&F Product Specification Validator</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
-
-      <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    
 </head>
-<body>
-    <div class="container my-5">
+<body class="bg-light">
+    <div class="container py-4">
         <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <h1 class="mb-4 text-center">T&F POD Product Specification Validator</h1>
-                
-                <!-- File Upload Area -->
-                <div class="card mb-4 shadow-sm">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">T&F Product Specification Validator</h4>
+                        <button class="btn btn-outline-light" onclick="clearResults()" id="clearBtn">
+                            Clear Results
+                        </button>
+                    </div>
                     <div class="card-body">
-                        <div class="drag-area" id="dropZone">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-file-earmark-text mb-3 text-primary" viewBox="0 0 16 16">
-                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
-                                <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
-                            </svg>
-                            <p class="mb-2">Drag and drop XML file here or</p>
-                            <input type="file" id="fileInput" accept=".xml" class="d-none">
-                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                                Choose File
-                            </button>
-                            <div id="fileInfo" class="file-info"></div>    
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h5 class="card-title mb-0">File Upload</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="drag-area" id="dropZone">
+                                            <i class="fas fa-file-upload fa-3x text-primary mb-3"></i>
+                                            <p class="mb-2">Drag and drop XML file here or</p>
+                                            <input type="file" id="fileInput" accept=".xml" class="d-none">
+                                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                                Choose File
+                                            </button>
+                                            <div id="fileInfo" class="file-info mt-3"></div>
+                                            <div class="progress mt-3" id="progressBar">
+                                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Results Area -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Validation Results</h5>
-                    </div>
-                    <div class="card-body validation-result" id="results">
-                        <p class="text-muted">Upload an XML file to see validation results.</p>
+                        <div class="alert alert-danger d-none" id="errorAlert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div id="errorMessage"></div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Validation Results</h5>
+                            </div>
+                            <div class="card-body validation-result" id="results">
+                                <p class="text-muted">Upload an XML file to see validation results.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

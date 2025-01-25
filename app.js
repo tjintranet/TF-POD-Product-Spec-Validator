@@ -1,14 +1,14 @@
-// Initialize validator
 const validator = new SpecificationValidator();
 
-// UI Elements
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileInfo = document.getElementById('fileInfo');
 const progressBar = document.getElementById('progressBar');
 const progressBarInner = progressBar.querySelector('.progress-bar');
+const errorAlert = document.getElementById('errorAlert');
+const errorMessage = document.getElementById('errorMessage');
 
-// File handling setup
 function updateProgress(percent) {
     progressBar.style.display = 'flex';
     progressBarInner.style.width = `${percent}%`;
@@ -33,7 +33,33 @@ function showFileInfo(file) {
     `;
 }
 
-// Drag and drop handlers
+function showError(message) {
+    errorMessage.textContent = message;
+    errorAlert.classList.remove('d-none');
+    dropZone.classList.add('error-shake');
+    setTimeout(() => dropZone.classList.remove('error-shake'), 1000);
+}
+
+function hideError() {
+    errorAlert.classList.add('d-none');
+}
+
+function validateFile(file) {
+    hideError();
+    
+    if (file.size > MAX_FILE_SIZE) {
+        showError(`File size exceeds 5MB limit (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        return false;
+    }
+    
+    if (!file.type.includes('xml') && !file.name.endsWith('.xml')) {
+        showError('Please upload an XML file');
+        return false;
+    }
+    
+    return true;
+}
+
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('dragover');
@@ -47,17 +73,15 @@ dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
-    if (file.type === 'text/xml' || file.name.endsWith('.xml')) {
+    if (validateFile(file)) {
         processFile(file);
         showFileInfo(file);
-    } else {
-        alert('Please upload an XML file');
     }
 });
 
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && validateFile(file)) {
         processFile(file);
         showFileInfo(file);
     }
@@ -135,7 +159,6 @@ function processFile(file) {
     reader.readAsText(file);
 }
 
-// Prevent default drag behaviors
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     document.body.addEventListener(eventName, (e) => {
         e.preventDefault();
