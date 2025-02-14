@@ -37,13 +37,31 @@ class SpecificationValidator {
     validateRequiredFields(context) {
         const { version_type, width, height, grammage, colour, results, fileName } = context;
         
-        this.addResult(results, 'File', true, `Processing: ${fileName}`);
+        // Add file processing result
+        this.addResult(results, 'File Processing', true, `Processing: ${fileName}`);
         
+        // Check each required field
+        const requiredFields = {
+            'Binding Type': version_type,
+            'Width': width,
+            'Height': height,
+            'Paper Weight': grammage,
+            'Color': colour
+        };
+
+        const missingFields = Object.entries(requiredFields)
+            .filter(([_, value]) => !value)
+            .map(([field]) => field);
+
+        const allFieldsPresent = missingFields.length === 0;
+
         return this.addResult(
             results,
             'Required Fields',
-            Boolean(version_type && width && height && grammage && colour),
-            'All required fields present'
+            allFieldsPresent,
+            allFieldsPresent 
+                ? 'All required fields are present and have values'
+                : `Some required fields are missing values: ${missingFields.join(', ')}`
         );
     }
 
@@ -66,7 +84,7 @@ class SpecificationValidator {
         return this.addResult(
             results,
             'Binding Type',
-            CONFIG.PAPER_WEIGHTS[grammage].bindings.has(normalizedBinding.trim()),
+            CONFIG.PAPER_WEIGHTS[grammage]?.bindings.has(normalizedBinding.trim()),
             `Binding: ${normalizedBinding}`
         );
     }
@@ -78,8 +96,8 @@ class SpecificationValidator {
         return this.addResult(
             results,
             'Size Combination',
-            CONFIG.PAPER_WEIGHTS[grammage].dimensions.has(dimension),
-            CONFIG.PAPER_WEIGHTS[grammage].dimensions.has(dimension)
+            CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension),
+            CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension)
                 ? `Valid trim size combination: ${dimension}mm`
                 : `Invalid trim size combination: ${dimension}mm`
         );
@@ -91,8 +109,8 @@ class SpecificationValidator {
         return this.addResult(
             results,
             'Color Compatibility',
-            CONFIG.PAPER_WEIGHTS[grammage].colors.has(colour),
-            CONFIG.PAPER_WEIGHTS[grammage].colors.has(colour)
+            CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour),
+            CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour)
                 ? `Valid color: ${colour}`
                 : `Invalid color ${colour} for ${grammage}`
         );
