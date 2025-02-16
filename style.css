@@ -1,3 +1,7 @@
+.processing-spinner {
+    display: none; /* Ensure spinner is hidden by default */
+}
+
 .drag-area {
     min-height: 200px;
     border: 2px dashed #dee2e6;
