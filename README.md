@@ -22,6 +22,7 @@ The validator performs the following checks on each XML file:
    - Height
    - Paper Weight
    - Color
+   - Treatment
 
 2. **Paper Weight Validation**: Validates against supported paper weights
    - 80gsm/50lb
@@ -39,6 +40,10 @@ The validator performs the following checks on each XML file:
    - Single color (1)
    - Four color (4)
    - Scattercolor options
+
+6. **Treatment Validation**: Validates cover treatment specification
+   - Must be either 'Gloss laminate' or 'Matt laminate'
+   - Any other value or empty field is considered invalid
 
 ## Technical Details
 
@@ -64,6 +69,7 @@ Contains mapping for:
 - Paper weight specifications
 - Supported dimensions
 - Color options
+- Treatment options
 
 #### Validator (validator.js)
 Implements the `SpecificationValidator` class with methods for:
@@ -72,6 +78,7 @@ Implements the `SpecificationValidator` class with methods for:
 - Binding type validation
 - Dimension validation
 - Color compatibility checks
+- Treatment validation
 
 #### Multi-validator (multi-validator.js)
 Handles:

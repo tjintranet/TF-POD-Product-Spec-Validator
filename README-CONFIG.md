@@ -22,6 +22,7 @@ The validator performs the following checks on each XML file:
    - Height
    - Paper Weight
    - Color
+   - Treatment
 
 2. **Paper Weight Validation**: Validates against supported paper weights
    - 80gsm/50lb
@@ -39,6 +40,10 @@ The validator performs the following checks on each XML file:
    - Single color (1)
    - Four color (4)
    - Scattercolor options
+
+6. **Treatment Validation**: Validates cover treatment specification
+   - Must be either 'Gloss laminate' or 'Matt laminate'
+   - Any other value or empty field is considered invalid
 
 ## Technical Details
 
@@ -64,86 +69,26 @@ Contains mapping for:
 - Paper weight specifications
 - Supported dimensions
 - Color options
-
-#### Validator (validator.js)
-Implements the `SpecificationValidator` class with methods for:
-- Required field validation
-- Paper weight validation
-- Binding type validation
-- Dimension validation
-- Color compatibility checks
-
-#### Multi-validator (multi-validator.js)
-Handles:
-- File upload and processing
-- Results display
-- Report generation
-- Clipboard operations
-
-## Usage
-
-1. **Upload Files**:
-   - Drag and drop XML files onto the upload area
-   - Or click "Browse Files" to select files manually
-
-2. **View Results**:
-   - Results are displayed immediately after processing
-   - Each file gets a card showing validation status and details
-   - Green indicates pass, red indicates failure
-
-3. **Export Results**:
-   - Click "Download Results" to export as CSV
-   - Choose between detailed or summary report
-   - Files are named with current date stamp
-
-4. **Copy Results**:
-   - Use "Copy to Clipboard" button on individual results
-   - Supports both rich text and plain text formats
-
-## Error Handling
-
-- Invalid XML format detection
-- Missing required field identification
-- Incompatible specification alerts
-- File processing error reporting
-
-## Browser Support
-
-Requires modern browsers with support for:
-- File API
-- Drag and Drop API
-- Clipboard API
-- CSS Grid and Flexbox
-- ES6+ JavaScript features
-
-## Performance
-
-- Asynchronous file processing
-- Batch file handling
-- Optimized DOM updates
-- Efficient validation algorithms
-
-## Styling
-
-The application uses a combination of:
-- Bootstrap classes for layout and components
-- Custom CSS for animations and visual feedback
-- Responsive design principles
-- Consistent color scheme for status indication
-
-## Future Enhancements
-
-Potential areas for improvement:
-1. Batch export of RTF reports
-2. Additional validation rules
-3. Custom validation rule configuration
-4. Progress indicators for large file sets
-5. Enhanced error reporting
-6. Support for additional file formats
+- Treatment options
 
 ## Configuration Details (config.js)
 
 The `config.js` file contains the core validation rules and specifications for the application. It exports a single `CONFIG` object that defines all validation parameters.
+
+### Valid Treatments
+
+```javascript
+VALID_TREATMENTS: new Set([
+    'Gloss laminate',
+    'Matt laminate'
+])
+```
+
+This configuration specifies the valid cover treatment options:
+- Only accepts 'Gloss laminate' or 'Matt laminate'
+- Used for validating the `<treatment>` tag in the XML
+- Case-sensitive matching
+- Empty values or any other treatments are considered invalid
 
 ### Binding Map
 
@@ -209,10 +154,12 @@ PAPER_WEIGHTS: {
    - All dimensions are in millimeters
    - Paper weight notation includes both GSM and LB equivalents
    - Color specifications are exact string matches
+   - Treatment values must match exactly
 
 3. **Extensibility**
    - New paper weights can be added by extending the `PAPER_WEIGHTS` object
    - Additional binding mappings can be included in `BINDING_MAP`
+   - Additional treatments can be added to `VALID_TREATMENTS`
    - Structure supports future addition of new validation parameters
 
 4. **Usage in Validation**
@@ -221,6 +168,7 @@ PAPER_WEIGHTS: {
    const isValidDimension = CONFIG.PAPER_WEIGHTS[paperWeight]?.dimensions.has(dimension);
    const isValidBinding = CONFIG.PAPER_WEIGHTS[paperWeight]?.bindings.has(bindingType);
    const isValidColor = CONFIG.PAPER_WEIGHTS[paperWeight]?.colors.has(color);
+   const isValidTreatment = CONFIG.VALID_TREATMENTS.has(treatment);
    ```
 
 ### Error Handling
@@ -229,6 +177,7 @@ The configuration structure supports robust error handling:
 - Optional chaining prevents errors with invalid paper weights
 - Set lookups return boolean values (no type coercion issues)
 - Clear separation between configuration and validation logic
+- Treatment validation fails gracefully for undefined values
 
 ### Maintenance Guidelines
 
@@ -237,4 +186,5 @@ When updating the configuration:
 2. Add new bindings to both sides of the binding map
 3. Use consistent units (millimeters) for dimensions
 4. Document any new color or binding terminology
-5. Test all combinations after making changes
+5. Ensure treatment values match exactly (case-sensitive)
+6. Test all combinations after making changes
