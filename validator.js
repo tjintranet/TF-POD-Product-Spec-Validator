@@ -2,16 +2,18 @@ class SpecificationValidator {
     constructor() {
         this.validationSteps = [
             this.validateRequiredFields,
-            this.validateProductionClass,  // New validation step
+            this.validateProductionClass,
             this.validatePaperWeight,
             this.validateBinding,
             this.validateDimensions,
-            this.validateColor
+            this.validateColor,
+            this.validateTreatment
         ];
     }
 
     validate(xmlDoc) {
         const results = [];
+        
         const context = {
             version_type: xmlDoc.querySelector('version_type')?.textContent?.trim(),
             width: xmlDoc.querySelector('format width')?.textContent?.trim(),
@@ -19,10 +21,11 @@ class SpecificationValidator {
             grammage: xmlDoc.querySelector('parts text grammage')?.textContent?.trim(),
             colour: xmlDoc.querySelector('parts text colour')?.textContent?.trim(),
             production_class: xmlDoc.querySelector('production_class')?.textContent?.trim(),
+            treatment: xmlDoc.querySelector('parts covers treatment')?.textContent?.trim(),
             results: results
         };
 
-        // Run all validation steps regardless of failures
+        // Run all validation steps
         for (const step of this.validationSteps) {
             step.call(this, context);
         }
@@ -35,7 +38,7 @@ class SpecificationValidator {
     }
 
     validateRequiredFields(context) {
-        const { version_type, width, height, grammage, colour, production_class, results } = context;
+        const { version_type, width, height, grammage, colour, production_class, treatment, results } = context;
         
         // Check each required field
         const requiredFields = {
@@ -44,16 +47,16 @@ class SpecificationValidator {
             'Height': height,
             'Paper Weight': grammage,
             'Color': colour,
-            'Production Class': production_class
+            'Production Class': production_class,
+            'Treatment': treatment
         };
 
         const missingFields = Object.entries(requiredFields)
-            .filter(([_, value]) => !value || value.trim() === '')  // Enhanced empty check
+            .filter(([_, value]) => !value || value.trim() === '')
             .map(([field]) => field);
 
         const allFieldsPresent = missingFields.length === 0;
 
-        // Create a more detailed error message
         const errorMessage = missingFields.map(field => 
             `${field}: ${requiredFields[field] === undefined ? 'missing' : 'empty'}`
         ).join(', ');
@@ -68,18 +71,8 @@ class SpecificationValidator {
         );
     }
 
-    // New validation method for Production Class
     validateProductionClass(context) {
         const { production_class, results } = context;
-        if (!production_class) {
-            this.addResult(
-                results,
-                'Production Class',
-                false,
-                'Production class is missing'
-            );
-            return;
-        }
         this.addResult(
             results,
             'Production Class',
@@ -92,15 +85,6 @@ class SpecificationValidator {
 
     validatePaperWeight(context) {
         const { grammage, results } = context;
-        if (!grammage) {
-            this.addResult(
-                results,
-                'Paper Weight',
-                false,
-                'Paper weight is missing'
-            );
-            return;
-        }
         this.addResult(
             results,
             'Paper Weight',
@@ -113,49 +97,25 @@ class SpecificationValidator {
 
     validateBinding(context) {
         const { version_type, grammage, results } = context;
-        if (!version_type || !grammage) {
-            this.addResult(
-                results,
-                'Binding Type',
-                false,
-                !version_type ? 'Binding type is missing' : 'Paper weight is missing (required for binding validation)'
-            );
-            return;
-        }
         const normalizedBinding = CONFIG.BINDING_MAP[version_type] || version_type;
-        const isValid = CONFIG.PAPER_WEIGHTS[grammage]?.bindings.has(normalizedBinding.trim());
         
         this.addResult(
             results,
             'Binding Type',
-            isValid,
-            isValid 
-                ? `Valid binding: ${normalizedBinding}`
-                : `Invalid binding combination: ${normalizedBinding} for ${grammage}`
+            CONFIG.PAPER_WEIGHTS[grammage]?.bindings.has(normalizedBinding.trim()),
+            `Binding: ${normalizedBinding}`
         );
     }
 
     validateDimensions(context) {
         const { width, height, grammage, results } = context;
-        if (!width || !height || !grammage) {
-            this.addResult(
-                results,
-                'Size Combination',
-                false,
-                !width || !height 
-                    ? 'Dimensions are missing'
-                    : 'Paper weight is missing (required for dimension validation)'
-            );
-            return;
-        }
         const dimension = `${width}x${height}`;
-        const isValid = CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension);
         
         this.addResult(
             results,
             'Trim Size Batch Validation',
-            isValid,
-            isValid 
+            CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension),
+            CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension)
                 ? `Valid trim size combination: ${dimension}mm`
                 : `Invalid trim size combination: ${dimension}mm`
         );
@@ -163,24 +123,37 @@ class SpecificationValidator {
 
     validateColor(context) {
         const { colour, grammage, results } = context;
-        if (!colour || !grammage) {
-            this.addResult(
-                results,
-                'Color Compatibility',
-                false,
-                !colour ? 'Color is missing' : 'Paper weight is missing (required for color validation)'
-            );
-            return;
-        }
-        const isValid = CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour);
         
         this.addResult(
             results,
             'Colour Spec Validation',
-            isValid,
-            isValid 
+            CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour),
+            CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour)
                 ? `Valid color: ${colour}`
                 : `Invalid color ${colour} for ${grammage}`
+        );
+    }
+
+    validateTreatment(context) {
+        const { treatment, results } = context;
+        if (!treatment) {
+            this.addResult(
+                results,
+                'Treatment',
+                false,
+                'Treatment is missing or empty'
+            );
+            return;
+        }
+        const isValid = CONFIG.VALID_TREATMENTS.has(treatment);
+        
+        this.addResult(
+            results,
+            'Treatment',
+            isValid,
+            isValid 
+                ? `Valid treatment: ${treatment}`
+                : `Invalid treatment: ${treatment} (must be either 'Gloss laminate' or 'Matt laminate')`
         );
     }
 }

@@ -10,6 +10,10 @@ const CONFIG = {
         'Standard',
         'Premium'
     ]),
+    VALID_TREATMENTS: new Set([
+        'Gloss laminate',
+        'Matt laminate'
+    ]),
     PAPER_WEIGHTS: {
         '80gsm/50lb': {
             dimensions: new Set([

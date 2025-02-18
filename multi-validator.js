@@ -107,105 +107,129 @@ function escapeCSV(cell) {
     return String(cell).replace(/"/g, '""');
 }
 
-// Function to convert validation results to RTF
-function convertToRTF(fileResult) {
-    // Escape special RTF characters
-    function escapeRTF(text) {
-        return text
-            .replace(/\\/g, '\\\\')
-            .replace(/\{/g, '\\{')
-            .replace(/\}/g, '\\}')
-            .replace(/\n/g, '\\par ')
-            .replace(/[^\u0000-\u007F]/g, char => `\\u${char.charCodeAt(0)}`);
+// Function to read file content
+function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target.result;
+            // Log the first few characters to debug
+            console.log('File content starts with:', content.substring(0, 100));
+            resolve(content);
+        };
+        reader.onerror = (e) => reject(new Error('Error reading file'));
+        reader.readAsText(file);
+    });
+}
+
+// Function to validate XML content
+function validateXMLContent(xmlContent, fileName) {
+    // Initialize validator if not already done
+    if (!validator) {
+        validator = new SpecificationValidator();
     }
 
-    // Start with basic RTF header and color table
-    let rtf = [
-        '{\\rtf1\\ansi\\deff0',
-        '{\\colortbl;\\red0\\green0\\blue0;\\red0\\green180\\blue0;\\red255\\green0\\blue0;}',
-        '\\viewkind4\\uc1\\pard\\cf1'
-    ];
-    
-    const hasErrors = fileResult.validations.some(v => !v.result);
-    const isbn = extractISBN(fileResult.fileName);
-    
-    // Add the content
-    rtf.push(
-        `\\b Validation Results for ISBN: ${escapeRTF(isbn)}\\b0\\par`,
-        `\\b Status: ${hasErrors ? '{\\cf3 Failed}' : '{\\cf2 Passed}'}\\b0\\par`,
-        '\\b ----------------------------------------\\b0\\par'
-    );
-    
-    // Add each validation result
-    fileResult.validations.forEach(validation => {
-        const symbol = validation.result ? '✓' : '✗';
-        const color = validation.result ? '\\cf2' : '\\cf3';
-        rtf.push(
-            `${color} ${symbol} \\b ${escapeRTF(validation.test)}:\\b0 ${escapeRTF(validation.message)}\\par`
-        );
-    });
-    
-    rtf.push('\\b ----------------------------------------\\b0\\par', '}');
-    
-    return rtf.join('\n');
-}
-
-// Helper function to create plain text version as fallback
-function createPlainTextVersion(fileResult) {
-    const isbn = extractISBN(fileResult.fileName);
-    const hasErrors = fileResult.validations.some(v => !v.result);
-    
-    let text = `Validation Results for ISBN: ${isbn}\n`;
-    text += `Status: ${hasErrors ? 'Failed' : 'Passed'}\n`;
-    text += '----------------------------------------\n';
-    
-    fileResult.validations.forEach(validation => {
-        text += `${validation.result ? '✓' : '✗'} ${validation.test}: ${validation.message}\n`;
-    });
-    
-    text += '----------------------------------------\n';
-    return text;
-}
-
-// Function to copy RTF to clipboard
-async function copyToClipboard(fileResult) {
-    const plainTextContent = createPlainTextVersion(fileResult);
-    
     try {
-        // Try using the modern Clipboard API with just plain text
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(plainTextContent);
-        } else {
-            // Fallback for browsers that don't support the Clipboard API
-            const textArea = document.createElement('textarea');
-            textArea.value = plainTextContent;
-            textArea.style.position = 'fixed';
-            textArea.style.opacity = '0';
-            document.body.appendChild(textArea);
-            textArea.select();
-            
-            try {
-                document.execCommand('copy');
-            } finally {
-                document.body.removeChild(textArea);
-            }
+        // Ensure we have a string and it starts with <?xml
+        if (typeof xmlContent !== 'string') {
+            console.error('xmlContent is not a string:', typeof xmlContent);
+            return [{
+                test: 'XML Format',
+                result: false,
+                message: 'Invalid XML content type'
+            }];
         }
 
-        // Show success feedback
-        const button = document.querySelector(`[data-isbn="${extractISBN(fileResult.fileName)}"]`);
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="bi bi-check-circle"></i> Copied!';
-        button.classList.remove('btn-outline-light');
-        button.classList.add('btn-success');
+        // Log the start of the content for debugging
+        console.log('XML Content starts with:', xmlContent.substring(0, 100));
+
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
         
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-light');
-        }, 2000);
-    } catch (err) {
-        console.error('Failed to copy:', err);
-        alert('Failed to copy to clipboard. Please try again.');
+        // Check if parsing was successful
+        const parseError = xmlDoc.getElementsByTagName('parsererror')[0];
+        if (parseError) {
+            console.log('XML Parse error:', parseError.textContent);
+            return [{
+                test: 'XML Format',
+                result: false,
+                message: `Invalid XML format: ${parseError.textContent}`
+            }];
+        }
+
+        // Get the product node
+        const productNode = xmlDoc.getElementsByTagName('product')[0];
+        if (!productNode) {
+            return [{
+                test: 'XML Structure',
+                result: false,
+                message: 'Missing root product element'
+            }];
+        }
+
+        return validator.validate(productNode);
+    } catch (error) {
+        console.error('Error processing XML:', error);
+        return [{
+            test: 'XML Processing',
+            result: false,
+            message: 'Error processing XML: ' + error.message
+        }];
+    }
+}
+
+// Function to handle file processing
+async function handleFiles(files) {
+    try {
+        processingSpinner.style.display = 'block';
+        validationResults = []; // Clear previous results
+
+        const filePromises = files.map(async (file) => {
+            try {
+                console.log('Processing file:', file.name);
+                const content = await readFileContent(file);
+                
+                // Verify the content is valid XML
+                if (!content.trim().startsWith('<?xml')) {
+                    console.error('File does not start with XML declaration:', file.name);
+                    validationResults.push({
+                        fileName: file.name,
+                        validations: [{
+                            test: 'XML Format',
+                            result: false,
+                            message: 'File does not contain valid XML content'
+                        }]
+                    });
+                    return;
+                }
+
+                const results = validateXMLContent(content, file.name);
+                if (results && Array.isArray(results)) {
+                    validationResults.push({
+                        fileName: file.name,
+                        validations: results
+                    });
+                }
+            } catch (error) {
+                console.error('Error processing file:', file.name, error);
+                validationResults.push({
+                    fileName: file.name,
+                    validations: [{
+                        test: 'File Processing',
+                        result: false,
+                        message: 'Error reading file: ' + error.message
+                    }]
+                });
+            }
+        });
+
+        await Promise.all(filePromises);
+        
+    } finally {
+        processingSpinner.style.display = 'none';
+        updateResultsDisplay();
+        downloadDropBtn.disabled = false;
+        clearBtn.disabled = false;
     }
 }
 
@@ -221,44 +245,6 @@ function calculateSummary() {
         passed: total - failed,
         failed
     };
-}
-
-// Function to read file content
-function readFileContent(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (e) => reject(new Error('Error reading file'));
-        reader.readAsText(file);
-    });
-}
-
-// Function to validate XML content
-function validateXMLContent(xmlContent, fileName) {
-    // Initialize validator if not already done
-    if (!validator) {
-        validator = new SpecificationValidator();
-    }
-    try {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
-        
-        if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
-            return [{
-                test: 'XML Format',
-                result: false,
-                message: 'Invalid XML format'
-            }];
-        }
-
-        return validator.validate(xmlDoc, fileName);
-    } catch (error) {
-        return [{
-            test: 'XML Processing',
-            result: false,
-            message: 'Error processing XML: ' + error.message
-        }];
-    }
 }
 
 // Function to update results display
@@ -294,7 +280,7 @@ function updateResultsDisplay() {
                         <div class="card-header ${headerClass} text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">${escapeHtml(isbn)}</h5>
                             <div class="d-flex align-items-center gap-2">
-                                <button class="btn btn-outline-light btn-sm" 
+                                <button class="btn btn-outline-light btn-sm copy-btn" 
                                         onclick="copyToClipboard(validationResults[${index}])"
                                         data-isbn="${escapeHtml(isbn)}">
                                     <i class="bi bi-clipboard"></i> Copy to Clipboard
@@ -305,10 +291,10 @@ function updateResultsDisplay() {
                             </div>
                         </div>
                         <div class="card-body">
-                            <ul class="card-validation-list">
+                            <ul class="list-unstyled mb-0">
                                 ${fileResult.validations.map(validation => `
-                                    <li class="d-flex align-items-center">
-                                        <i class="bi ${validation.result ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2"></i>
+                                    <li class="d-flex align-items-start mb-2">
+                                        <i class="bi ${validation.result ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2 mt-1"></i>
                                         <div>
                                             <strong>${escapeHtml(validation.test)}:</strong> 
                                             ${escapeHtml(validation.message)}
@@ -378,61 +364,48 @@ function downloadResults(type = 'detailed') {
     const link = document.createElement('a');
     
     const now = new Date();
-    const filename = now.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    }).replace(/\//g, '-');
+    const filename = type === 'detailed' ? 'validation_details.csv' : 'validation_summary.csv';
     
     link.setAttribute('href', url);
-    link.setAttribute('download', `validation_results_${type}_${filename}.csv`);
-    link.style.display = 'none';
-    
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
 
-// Function to handle file processing
-async function handleFiles(files) {
-    try {
-        processingSpinner.style.display = 'block';
-        validationResults = []; // Clear previous results
-    } finally {
-        processingSpinner.style.display = 'none';
-    }
-
-    const filePromises = files.map(async (file) => {
-        try {
-            const content = await readFileContent(file);
-            const results = validateXMLContent(content, file.name);
-            if (results && Array.isArray(results)) {
-                validationResults.push({
-                    fileName: file.name,
-                    validations: results
-                });
-            }
-        } catch (error) {
-            console.error('Error processing file:', error);
-            validationResults.push({
-                fileName: file.name,
-                validations: [{
-                    test: 'File Processing',
-                    result: false,
-                    message: 'Error reading file: ' + error.message
-                }]
-            });
-        }
+// Function to copy results to clipboard
+async function copyToClipboard(fileResult) {
+    const isbn = extractISBN(fileResult.fileName);
+    const hasErrors = fileResult.validations.some(v => !v.result);
+    
+    let text = `Validation Results for ISBN: ${isbn}\n`;
+    text += `Status: ${hasErrors ? 'Failed' : 'Passed'}\n`;
+    text += '----------------------------------------\n';
+    
+    fileResult.validations.forEach(validation => {
+        text += `${validation.result ? '✓' : '✗'} ${validation.test}: ${validation.message}\n`;
     });
-
+    
+    text += '----------------------------------------\n';
+    
     try {
-        await Promise.all(filePromises);
-
-        updateResultsDisplay();
-        downloadDropBtn.disabled = false;
-        clearBtn.disabled = false;
-    } catch (error) {
-        console.error('Error in handleFiles:', error);
+        await navigator.clipboard.writeText(text);
+        
+        // Show success feedback
+        const button = document.querySelector(`[data-isbn="${isbn}"]`);
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check-circle"></i> Copied!';
+        button.classList.remove('btn-outline-light');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-light');
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard. Please try again.');
     }
 }
