@@ -6,6 +6,10 @@ const CONFIG = {
         'Cased': 'Hardback',
         'Limp': 'Paperback'
     },
+    PRODUCTION_CLASSES: new Set([
+        'Standard',
+        'Premium'
+    ]),
     PAPER_WEIGHTS: {
         '80gsm/50lb': {
             dimensions: new Set([
