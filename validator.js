@@ -7,7 +7,8 @@ class SpecificationValidator {
             this.validateBinding,
             this.validateDimensions,
             this.validateColor,
-            this.validateTreatment
+            this.validateTreatment,
+            this.validatePageExtent  // Add new validation step
         ];
     }
 
@@ -22,6 +23,7 @@ class SpecificationValidator {
             colour: xmlDoc.querySelector('parts text colour')?.textContent?.trim(),
             production_class: xmlDoc.querySelector('production_class')?.textContent?.trim(),
             treatment: xmlDoc.querySelector('parts covers treatment')?.textContent?.trim(),
+            page_extent: xmlDoc.querySelector('page_extent')?.textContent?.trim(),  // Add new field
             results: results
         };
 
@@ -38,7 +40,7 @@ class SpecificationValidator {
     }
 
     validateRequiredFields(context) {
-        const { version_type, width, height, grammage, colour, production_class, treatment, results } = context;
+        const { version_type, width, height, grammage, colour, production_class, treatment, page_extent, results } = context;
         
         // Check each required field
         const requiredFields = {
@@ -48,7 +50,8 @@ class SpecificationValidator {
             'Paper Weight': grammage,
             'Color': colour,
             'Production Class': production_class,
-            'Treatment': treatment
+            'Treatment': treatment,
+            'Page Extent': page_extent
         };
 
         const missingFields = Object.entries(requiredFields)
@@ -113,7 +116,7 @@ class SpecificationValidator {
         
         this.addResult(
             results,
-            'Trim Size Batch Validation',
+            'Size Combination',
             CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension),
             CONFIG.PAPER_WEIGHTS[grammage]?.dimensions.has(dimension)
                 ? `Valid trim size combination: ${dimension}mm`
@@ -126,7 +129,7 @@ class SpecificationValidator {
         
         this.addResult(
             results,
-            'Colour Spec Validation',
+            'Color Compatibility',
             CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour),
             CONFIG.PAPER_WEIGHTS[grammage]?.colors.has(colour)
                 ? `Valid color: ${colour}`
@@ -154,6 +157,32 @@ class SpecificationValidator {
             isValid 
                 ? `Valid treatment: ${treatment}`
                 : `Invalid treatment: ${treatment} (must be either 'Gloss laminate' or 'Matt laminate')`
+        );
+    }
+
+    validatePageExtent(context) {
+        const { page_extent, results } = context;
+        
+        if (!page_extent) {
+            this.addResult(
+                results,
+                'Page Extent',
+                false,
+                'Page extent is missing or empty'
+            );
+            return;
+        }
+
+        const pageNum = parseInt(page_extent);
+        const isValid = !isNaN(pageNum) && pageNum > 0 && pageNum <= CONFIG.MAX_PAGE_EXTENT;
+        
+        this.addResult(
+            results,
+            'Page Extent',
+            isValid,
+            isValid 
+                ? `Valid page extent: ${pageNum}`
+                : `Invalid page extent: ${pageNum} (must not exceed ${CONFIG.MAX_PAGE_EXTENT} pages)`
         );
     }
 }

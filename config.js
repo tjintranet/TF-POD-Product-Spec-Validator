@@ -14,6 +14,7 @@ const CONFIG = {
         'Gloss laminate',
         'Matt laminate'
     ]),
+    MAX_PAGE_EXTENT: 1040,
     PAPER_WEIGHTS: {
         '80gsm/50lb': {
             dimensions: new Set([
