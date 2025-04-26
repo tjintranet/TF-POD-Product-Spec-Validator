@@ -24,6 +24,7 @@ The validator performs the following checks on each XML file:
    - Color
    - Treatment
    - Page Extent
+   - Binding Style
 
 2. **Paper Weight Validation**: Validates against supported paper weights
    - 80gsm/50lb
@@ -33,20 +34,24 @@ The validator performs the following checks on each XML file:
    - Supports: Cased (Hardback)
    - Supports: Limp (Paperback)
 
-4. **Dimension Validation**: Verifies if the trim size combination is valid for the specified paper weight
+4. **Binding Style Validation**: Verifies that binding style starts with a valid prefix
+   - Must start with 'Cased' or 'Limp'
+   - Any other prefix is considered invalid
+
+5. **Dimension Validation**: Verifies if the trim size combination is valid for the specified paper weight
    - Multiple supported dimensions per paper weight
    - Dimensions are specified in millimeters
 
-5. **Color Compatibility**: Ensures color specification matches paper weight requirements
+6. **Color Compatibility**: Ensures color specification matches paper weight requirements
    - Single color (1)
    - Four color (4)
    - Scattercolor options
 
-6. **Treatment Validation**: Validates cover treatment specification
+7. **Treatment Validation**: Validates cover treatment specification
    - Must be either 'Gloss laminate' or 'Matt laminate'
    - Any other value or empty field is considered invalid
 
-7. **Page Extent Validation**: Verifies the page count is within acceptable limits
+8. **Page Extent Validation**: Verifies the page count is within acceptable limits
    - Must be a positive number
    - Must not exceed 1040 pages
    - Empty or non-numeric values are invalid
@@ -83,6 +88,7 @@ Implements the `SpecificationValidator` class with methods for:
 - Required field validation
 - Paper weight validation
 - Binding type validation
+- Binding style validation
 - Dimension validation
 - Color compatibility checks
 - Treatment validation

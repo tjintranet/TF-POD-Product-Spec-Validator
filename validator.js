@@ -5,10 +5,11 @@ class SpecificationValidator {
             this.validateProductionClass,
             this.validatePaperWeight,
             this.validateBinding,
+            this.validateBindingStyle, // New validation step
             this.validateDimensions,
             this.validateColor,
             this.validateTreatment,
-            this.validatePageExtent  // Add new validation step
+            this.validatePageExtent
         ];
     }
 
@@ -23,7 +24,8 @@ class SpecificationValidator {
             colour: xmlDoc.querySelector('parts text colour')?.textContent?.trim(),
             production_class: xmlDoc.querySelector('production_class')?.textContent?.trim(),
             treatment: xmlDoc.querySelector('parts covers treatment')?.textContent?.trim(),
-            page_extent: xmlDoc.querySelector('page_extent')?.textContent?.trim(),  // Add new field
+            page_extent: xmlDoc.querySelector('page_extent')?.textContent?.trim(),
+            binding_style: xmlDoc.querySelector('binding style')?.textContent?.trim(), // New field
             results: results
         };
 
@@ -40,7 +42,7 @@ class SpecificationValidator {
     }
 
     validateRequiredFields(context) {
-        const { version_type, width, height, grammage, colour, production_class, treatment, page_extent, results } = context;
+        const { version_type, width, height, grammage, colour, production_class, treatment, page_extent, binding_style, results } = context;
         
         // Check each required field
         const requiredFields = {
@@ -51,7 +53,8 @@ class SpecificationValidator {
             'Color': colour,
             'Production Class': production_class,
             'Treatment': treatment,
-            'Page Extent': page_extent
+            'Page Extent': page_extent,
+            'Binding Style': binding_style // Add new required field
         };
 
         const missingFields = Object.entries(requiredFields)
@@ -107,6 +110,32 @@ class SpecificationValidator {
             'Binding Type',
             CONFIG.PAPER_WEIGHTS[grammage]?.bindings.has(normalizedBinding.trim()),
             `Binding: ${normalizedBinding}`
+        );
+    }
+
+    validateBindingStyle(context) {
+        const { binding_style, results } = context;
+        
+        if (!binding_style) {
+            this.addResult(
+                results,
+                'Binding Style',
+                false,
+                'Binding style is missing or empty'
+            );
+            return;
+        }
+
+        // Check if binding style starts with Limp or Cased
+        const isValid = binding_style.startsWith('Limp') || binding_style.startsWith('Cased');
+        
+        this.addResult(
+            results,
+            'Binding Style',
+            isValid,
+            isValid 
+                ? `Valid binding style: ${binding_style}`
+                : `Invalid binding style: ${binding_style} (must be either 'Limp' or 'Cased')`
         );
     }
 
