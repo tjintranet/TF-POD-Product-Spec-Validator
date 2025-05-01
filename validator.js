@@ -16,6 +16,11 @@ class SpecificationValidator {
     validate(xmlDoc) {
         const results = [];
         
+        // Extract generator information
+        const firstName = xmlDoc.querySelector('xml_generated_by first_name')?.textContent?.trim() || '';
+        const lastName = xmlDoc.querySelector('xml_generated_by last_name')?.textContent?.trim() || '';
+        const generator = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : '';
+        
         const context = {
             version_type: xmlDoc.querySelector('version_type')?.textContent?.trim(),
             width: xmlDoc.querySelector('format width')?.textContent?.trim(),
@@ -25,7 +30,8 @@ class SpecificationValidator {
             production_class: xmlDoc.querySelector('production_class')?.textContent?.trim(),
             treatment: xmlDoc.querySelector('parts covers treatment')?.textContent?.trim(),
             page_extent: xmlDoc.querySelector('page_extent')?.textContent?.trim(),
-            binding_style: xmlDoc.querySelector('binding style')?.textContent?.trim(), // New field
+            binding_style: xmlDoc.querySelector('binding style')?.textContent?.trim(),
+            generator: generator, // Add generator information
             results: results
         };
 
@@ -135,7 +141,7 @@ class SpecificationValidator {
             isValid,
             isValid 
                 ? `Valid binding style: ${binding_style}`
-                : `Invalid binding style: ${binding_style} (must be either 'Limp' or 'Cased')`
+                : `Invalid binding style: ${binding_style} (must start with 'Limp' or 'Cased')`
         );
     }
 

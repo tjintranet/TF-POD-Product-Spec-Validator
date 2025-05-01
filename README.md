@@ -11,6 +11,7 @@ A web-based application for validating XML files against Taylor & Francis publis
 - **Export Options**: Download validation results in CSV format
 - **Clipboard Support**: Copy individual validation results to clipboard
 - **Responsive Design**: Works on both desktop and mobile devices
+- **Generator Information**: Displays who generated each XML file
 
 ## Validation Checks
 
@@ -56,6 +57,14 @@ The validator performs the following checks on each XML file:
    - Must not exceed 1040 pages
    - Empty or non-numeric values are invalid
 
+## Generator Information
+
+The application extracts and displays information about who generated each XML file:
+- Shows the generator's name at the bottom of each validation result card
+- Extracted from `product/xml_generated_by/first_name` and `product/xml_generated_by/last_name` nodes
+- Included in CSV exports and clipboard operations
+- Helps track the source of each file for accountability purposes
+
 ## Technical Details
 
 ### Dependencies
@@ -81,6 +90,7 @@ Contains mapping for:
 - Supported dimensions
 - Color options
 - Treatment options
+- Page extent limits
 
 #### Validator (validator.js)
 Implements the `SpecificationValidator` class with methods for:
@@ -92,6 +102,7 @@ Implements the `SpecificationValidator` class with methods for:
 - Color compatibility checks
 - Treatment validation
 - Page extent validation
+- Generator information extraction
 
 #### Multi-validator (multi-validator.js)
 Handles:
@@ -99,6 +110,7 @@ Handles:
 - Results display
 - Report generation
 - Clipboard operations
+- Generator information display
 
 ## Usage
 
@@ -110,15 +122,18 @@ Handles:
    - Results are displayed immediately after processing
    - Each file gets a card showing validation status and details
    - Green indicates pass, red indicates failure
+   - Generator information appears at the bottom of each card
 
 3. **Export Results**:
    - Click "Download Results" to export as CSV
    - Choose between detailed or summary report
    - Files are named with current date stamp
+   - Reports include generator information in a dedicated column
 
 4. **Copy Results**:
    - Use "Copy to Clipboard" button on individual results
    - Supports both rich text and plain text formats
+   - Includes generator information in the copied text
 
 ## Error Handling
 
@@ -126,6 +141,7 @@ Handles:
 - Missing required field identification
 - Incompatible specification alerts
 - File processing error reporting
+- Missing or invalid generator information handled gracefully
 
 ## Browser Support
 
@@ -150,15 +166,4 @@ The application uses a combination of:
 - Custom CSS for animations and visual feedback
 - Responsive design principles
 - Consistent color scheme for status indication
-
-## Future Enhancements
-
-Potential areas for improvement:
-1. Batch export of RTF reports
-2. Additional validation rules
-3. Custom validation rule configuration
-4. Progress indicators for large file sets
-5. Enhanced error reporting
-6. Support for additional file formats
-
-
+- Subtle styling for generator information
