@@ -5,7 +5,7 @@ class SpecificationValidator {
             this.validateProductionClass,
             this.validatePaperWeight,
             this.validateBinding,
-            this.validateBindingStyle, // New validation step
+            this.validateBindingStyle,
             this.validateDimensions,
             this.validateColor,
             this.validateTreatment,
@@ -60,7 +60,7 @@ class SpecificationValidator {
             'Production Class': production_class,
             'Treatment': treatment,
             'Page Extent': page_extent,
-            'Binding Style': binding_style // Add new required field
+            'Binding Style': binding_style
         };
 
         const missingFields = Object.entries(requiredFields)
