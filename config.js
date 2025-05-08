@@ -29,7 +29,8 @@ const CONFIG = {
         },
         '90gsm/60lb': {
             dimensions: new Set([
-                '152x229', '156x234', '174x246', '178x254'
+                '129x198', '138x216', '152x229', '156x234', '174x246', 
+                '178x254', '210x280', '210x297'
             ]),
             colors: new Set(['4', 'Scattercolor', '4 or Scattercolour']),
             bindings: new Set(['Cased', 'Limp'])
