@@ -8,7 +8,7 @@ A web-based application for validating XML files against Taylor & Francis publis
 - **Batch Processing**: Process multiple XML files simultaneously
 - **Real-time Validation**: Instant feedback on validation results
 - **Detailed Reports**: Comprehensive validation reports for each file
-- **Export Options**: Download validation results in CSV format
+- **Export Options**: Download validation results as formatted text reports
 - **Clipboard Support**: Copy individual validation results to clipboard
 - **Responsive Design**: Works on both desktop and mobile devices
 
@@ -98,7 +98,7 @@ Implements the `SpecificationValidator` class with methods for:
 Handles:
 - File upload and processing
 - Results display
-- Report generation
+- Text report generation
 - Clipboard operations
 
 ## Usage
@@ -113,13 +113,30 @@ Handles:
    - Green indicates pass, red indicates failure
 
 3. **Export Results**:
-   - Click "Download Results" to export as CSV
-   - Choose between detailed or summary report
-   - Files are named with current date stamp
+   - Click "Download Results" to export as formatted text reports
+   - Choose between detailed or summary report types
+   - Reports include professional formatting with headers and statistics
+   - Files are named with current date stamp (e.g., `validation_detailed_report_2025-06-18.txt`)
 
 4. **Copy Results**:
    - Use "Copy to Clipboard" button on individual results
-   - Supports both rich text and plain text formats
+   - Copies formatted text matching the onscreen display
+
+## Report Types
+
+### Detailed Report
+- Shows all validation tests for each file
+- Includes complete test results with ✓/✗ indicators
+- Full validation messages for each test
+- Generator information when available
+- Professional formatting with clear section separators
+
+### Summary Report
+- Overview statistics for each file
+- Shows only failed tests for quick issue identification
+- Pass/fail counts and success rates
+- Condensed format for easier scanning
+- Generator information when available
 
 ## Error Handling
 
@@ -152,12 +169,24 @@ The application uses a combination of:
 - Responsive design principles
 - Consistent color scheme for status indication
 
+## Report Format
+
+Text reports feature:
+- 80-character width professional layout
+- Clear section headers and separators
+- Summary statistics with success rates
+- Visual indicators (✓ for pass, ✗ for fail)
+- Generator information display
+- Timestamp and report type identification
+- Plain text format for universal compatibility
+
 ## Future Enhancements
 
 Potential areas for improvement:
-1. Batch export of RTF reports
+1. Additional export formats (PDF, RTF)
 2. Additional validation rules
 3. Custom validation rule configuration
 4. Progress indicators for large file sets
 5. Enhanced error reporting
 6. Support for additional file formats
+7. Email integration for report sharing

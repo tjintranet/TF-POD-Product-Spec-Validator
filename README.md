@@ -8,7 +8,7 @@ A web-based application for validating XML files against Taylor & Francis publis
 - **Batch Processing**: Process multiple XML files simultaneously
 - **Real-time Validation**: Instant feedback on validation results
 - **Detailed Reports**: Comprehensive validation reports for each file
-- **Export Options**: Download validation results in CSV format
+- **Export Options**: Download validation results as formatted text reports
 - **Clipboard Support**: Copy individual validation results to clipboard
 - **Responsive Design**: Works on both desktop and mobile devices
 - **Generator Information**: Displays who generated each XML file
@@ -62,7 +62,7 @@ The validator performs the following checks on each XML file:
 The application extracts and displays information about who generated each XML file:
 - Shows the generator's name at the bottom of each validation result card
 - Extracted from `product/xml_generated_by/first_name` and `product/xml_generated_by/last_name` nodes
-- Included in CSV exports and clipboard operations
+- Included in text reports and clipboard operations
 - Helps track the source of each file for accountability purposes
 
 ## Technical Details
@@ -108,7 +108,7 @@ Implements the `SpecificationValidator` class with methods for:
 Handles:
 - File upload and processing
 - Results display
-- Report generation
+- Text report generation
 - Clipboard operations
 - Generator information display
 
@@ -125,15 +125,43 @@ Handles:
    - Generator information appears at the bottom of each card
 
 3. **Export Results**:
-   - Click "Download Results" to export as CSV
-   - Choose between detailed or summary report
-   - Files are named with current date stamp
-   - Reports include generator information in a dedicated column
+   - Click "Download Results" to export as formatted text reports
+   - Choose between detailed or summary report types
+   - Reports include professional formatting with headers and statistics
+   - Reports include generator information in a dedicated section
+   - Files are named with current date stamp (e.g., `validation_detailed_report_2025-06-18.txt`)
 
 4. **Copy Results**:
    - Use "Copy to Clipboard" button on individual results
-   - Supports both rich text and plain text formats
+   - Copies formatted text matching the onscreen display
    - Includes generator information in the copied text
+
+## Report Types
+
+### Detailed Report
+- Shows all validation tests for each file with ✓/✗ indicators
+- Complete validation messages for each test
+- Generator information for accountability
+- Professional formatting with clear section separators
+- Summary statistics at the top
+
+### Summary Report
+- Overview statistics for each file (passed/failed test counts)
+- Shows only failed tests for quick issue identification
+- Generator information when available
+- Condensed format for easier scanning
+- Success rate calculations
+
+## Report Format
+
+Text reports feature:
+- 80-character width professional layout
+- Clear section headers and separators using ASCII characters
+- Summary statistics with total files, passed, failed, and success rates
+- Visual indicators (✓ for pass, ✗ for fail)
+- Generator information display for each file
+- Timestamp and report type identification
+- Plain text format for universal compatibility and easy sharing
 
 ## Error Handling
 
