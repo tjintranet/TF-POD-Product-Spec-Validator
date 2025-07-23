@@ -5,15 +5,23 @@ const resultsArea = document.getElementById('resultsArea');
 const downloadDropBtn = document.getElementById('downloadDropBtn');
 const downloadDetailedBtn = document.getElementById('downloadDetailedBtn');
 const downloadSummaryBtn = document.getElementById('downloadSummaryBtn');
+const downloadAllDetailedBtn = document.getElementById('downloadAllDetailedBtn');
+const downloadAllSummaryBtn = document.getElementById('downloadAllSummaryBtn');
 const clearBtn = document.getElementById('clearBtn');
 const processingSpinner = document.getElementById('processingSpinner');
 const resultsSummary = document.getElementById('resultsSummary');
 const totalFilesEl = document.getElementById('totalFiles');
+const totalShowingEl = document.getElementById('totalShowing');
 const totalPassedEl = document.getElementById('totalPassed');
 const totalFailedEl = document.getElementById('totalFailed');
+const filterSection = document.getElementById('filterSection');
+const generatorFilters = document.getElementById('generatorFilters');
+const clearFilter = document.getElementById('clearFilter');
+const filterSummary = document.getElementById('filterSummary');
 
-// Store results
+// Store results and filter state
 let validationResults = [];
+let currentFilter = null;
 let validator;
 
 // Initialize when DOM is loaded
@@ -64,23 +72,46 @@ function setupEventListeners() {
     // Clear button handler
     clearBtn.addEventListener('click', () => {
         validationResults = [];
+        currentFilter = null;
         updateResultsDisplay();
+        updateFilterSection();
         downloadDropBtn.disabled = true;
         clearBtn.disabled = true;
+    });
+
+    // Clear filter handler
+    clearFilter.addEventListener('click', () => {
+        currentFilter = null;
+        updateResultsDisplay();
+        updateFilterButtons();
     });
 
     // Download button handlers
     downloadDetailedBtn.addEventListener('click', (e) => {
         e.preventDefault();
         if (validationResults.length > 0) {
-            downloadResults('detailed');
+            downloadResults('detailed', true);
         }
     });
 
     downloadSummaryBtn.addEventListener('click', (e) => {
         e.preventDefault();
         if (validationResults.length > 0) {
-            downloadResults('summary');
+            downloadResults('summary', true);
+        }
+    });
+
+    downloadAllDetailedBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (validationResults.length > 0) {
+            downloadResults('detailed', false);
+        }
+    });
+
+    downloadAllSummaryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (validationResults.length > 0) {
+            downloadResults('summary', false);
         }
     });
 }
@@ -246,21 +277,102 @@ async function handleFiles(files) {
         
     } finally {
         processingSpinner.style.display = 'none';
+        currentFilter = null; // Reset filter when new files are processed
         updateResultsDisplay();
+        updateFilterSection();
         downloadDropBtn.disabled = false;
         clearBtn.disabled = false;
     }
 }
 
+// Get unique generators from results
+function getUniqueGenerators() {
+    const generators = new Set();
+    validationResults.forEach(result => {
+        if (result.generator && result.generator.trim()) {
+            generators.add(result.generator.trim());
+        }
+    });
+    return Array.from(generators).sort();
+}
+
+// Update filter section
+function updateFilterSection() {
+    const generators = getUniqueGenerators();
+    
+    if (generators.length <= 1) {
+        filterSection.style.display = 'none';
+        return;
+    }
+    
+    filterSection.style.display = 'block';
+    
+    generatorFilters.innerHTML = generators.map(generator => {
+        const count = validationResults.filter(r => r.generator === generator).length;
+        return `
+            <div class="col-auto">
+                <div class="generator-filter-item badge bg-light text-dark border px-3 py-2" 
+                     data-generator="${escapeHtml(generator)}">
+                    ${escapeHtml(generator)} (${count})
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Add event listeners to filter buttons
+    document.querySelectorAll('.generator-filter-item').forEach(button => {
+        button.addEventListener('click', () => {
+            const generator = button.getAttribute('data-generator');
+            currentFilter = currentFilter === generator ? null : generator;
+            updateResultsDisplay();
+            updateFilterButtons();
+        });
+    });
+    
+    updateFilterButtons();
+}
+
+// Update filter button states
+function updateFilterButtons() {
+    document.querySelectorAll('.generator-filter-item').forEach(button => {
+        const generator = button.getAttribute('data-generator');
+        if (currentFilter === generator) {
+            button.classList.add('active');
+            button.classList.remove('bg-light', 'text-dark');
+        } else {
+            button.classList.remove('active');
+            button.classList.add('bg-light', 'text-dark');
+        }
+    });
+    
+    // Update filter summary
+    if (currentFilter) {
+        const filteredCount = getFilteredResults().length;
+        filterSummary.textContent = `Showing ${filteredCount} files generated by "${currentFilter}"`;
+    } else {
+        filterSummary.textContent = '';
+    }
+}
+
+// Get filtered results
+function getFilteredResults() {
+    if (!currentFilter) {
+        return validationResults;
+    }
+    return validationResults.filter(result => result.generator === currentFilter);
+}
+
 // Calculate summary statistics
-function calculateSummary() {
-    const total = validationResults.length;
-    const failed = validationResults.filter(result => 
+function calculateSummary(useFilter = true) {
+    const results = useFilter ? getFilteredResults() : validationResults;
+    const total = results.length;
+    const failed = results.filter(result => 
         result.validations.some(v => !v.result)
     ).length;
     
     return {
-        total,
+        total: validationResults.length,
+        showing: total,
         passed: total - failed,
         failed
     };
@@ -282,6 +394,7 @@ function updateResultsDisplay() {
     resultsSummary.classList.remove('d-none');
     const summary = calculateSummary();
     totalFilesEl.textContent = summary.total;
+    totalShowingEl.textContent = summary.showing;
     totalPassedEl.textContent = summary.passed;
     totalFailedEl.textContent = summary.failed;
 
@@ -293,8 +406,12 @@ function updateResultsDisplay() {
             const headerClass = hasErrors ? 'bg-danger' : 'bg-success';
             const isbn = extractISBN(fileResult.fileName);
             
+            // Determine if this result should be shown based on filter
+            const shouldShow = !currentFilter || fileResult.generator === currentFilter;
+            const displayClass = shouldShow ? '' : 'filtered-out';
+            
             return `
-                <div class="col-12" data-file-index="${index}">
+                <div class="col-12 ${displayClass}" data-file-index="${index}">
                     <div class="card validation-card ${cardClass} mb-3">
                         <div class="card-header ${headerClass} text-white d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">${escapeHtml(isbn)}</h5>
@@ -335,11 +452,12 @@ function updateResultsDisplay() {
 }
 
 // Function to generate text report content
-function generateTextReport(type = 'detailed') {
-    if (validationResults.length === 0) return '';
+function generateTextReport(type = 'detailed', useFilter = true) {
+    const results = useFilter ? getFilteredResults() : validationResults;
+    if (results.length === 0) return '';
     
     const timestamp = new Date().toLocaleString();
-    const summary = calculateSummary();
+    const summary = calculateSummary(useFilter);
     
     let report = '';
     
@@ -348,21 +466,51 @@ function generateTextReport(type = 'detailed') {
     report += 'T&F XML VALIDATION REPORT\n';
     report += '='.repeat(80) + '\n';
     report += `Generated: ${timestamp}\n`;
-    report += `Report Type: ${type === 'detailed' ? 'Detailed' : 'Summary'}\n\n`;
+    report += `Report Type: ${type === 'detailed' ? 'Detailed' : 'Summary'}\n`;
+    
+    if (useFilter && currentFilter) {
+        report += `Filter: Generated by "${currentFilter}"\n`;
+    }
+    
+    report += '\n';
     
     // Summary section
     report += 'SUMMARY\n';
     report += '-'.repeat(40) + '\n';
-    report += `Total Files Processed: ${summary.total}\n`;
+    
+    if (useFilter && currentFilter) {
+        report += `Filter Applied: Files by "${currentFilter}"\n`;
+        report += `Total Files in System: ${validationResults.length}\n`;
+        report += `Filtered Files Shown: ${summary.showing}\n`;
+    } else {
+        report += `Total Files Processed: ${summary.showing}\n`;
+    }
+    
     report += `Files Passed: ${summary.passed}\n`;
     report += `Files Failed: ${summary.failed}\n`;
-    report += `Success Rate: ${summary.total > 0 ? Math.round((summary.passed / summary.total) * 100) : 0}%\n\n`;
+    report += `Success Rate: ${summary.showing > 0 ? Math.round((summary.passed / summary.showing) * 100) : 0}%\n\n`;
+    
+    // Generator breakdown if not filtered
+    if (!useFilter || !currentFilter) {
+        const generators = getUniqueGenerators();
+        if (generators.length > 1) {
+            report += 'GENERATOR BREAKDOWN\n';
+            report += '-'.repeat(40) + '\n';
+            generators.forEach(generator => {
+                const genResults = validationResults.filter(r => r.generator === generator);
+                const genFailed = genResults.filter(r => r.validations.some(v => !v.result)).length;
+                const genPassed = genResults.length - genFailed;
+                report += `${generator}: ${genResults.length} files (${genPassed} passed, ${genFailed} failed)\n`;
+            });
+            report += '\n';
+        }
+    }
     
     // Individual file results
     report += 'VALIDATION RESULTS\n';
     report += '='.repeat(80) + '\n\n';
     
-    validationResults.forEach((fileResult, index) => {
+    results.forEach((fileResult, index) => {
         const isbn = extractISBN(fileResult.fileName);
         const hasErrors = fileResult.validations.some(v => !v.result);
         const status = hasErrors ? 'FAILED' : 'PASSED';
@@ -417,12 +565,20 @@ function generateTextReport(type = 'detailed') {
 }
 
 // Function to download results as text report
-function downloadResults(type = 'detailed') {
-    if (validationResults.length === 0) return;
+function downloadResults(type = 'detailed', useFilter = true) {
+    const results = useFilter ? getFilteredResults() : validationResults;
+    if (results.length === 0) return;
     
-    const reportContent = generateTextReport(type);
+    const reportContent = generateTextReport(type, useFilter);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-    const filename = `validation_${type}_report_${timestamp}.txt`;
+    
+    let filename = `validation_${type}_report_${timestamp}`;
+    if (useFilter && currentFilter) {
+        // Create a safe filename from the generator name
+        const safeName = currentFilter.replace(/[^a-zA-Z0-9]/g, '_');
+        filename += `_${safeName}`;
+    }
+    filename += '.txt';
     
     // Create and trigger download
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8;' });

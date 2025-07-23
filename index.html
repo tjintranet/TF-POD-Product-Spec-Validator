@@ -24,8 +24,11 @@
                                     <i class="bi bi-download"></i> Download Results
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a href="#" class="dropdown-item" id="downloadDetailedBtn">Detailed Report</a></li>
-                                    <li><a href="#" class="dropdown-item" id="downloadSummaryBtn">Summary Report</a></li>
+                                    <li><a href="#" class="dropdown-item" id="downloadDetailedBtn">Detailed Report (Filtered)</a></li>
+                                    <li><a href="#" class="dropdown-item" id="downloadSummaryBtn">Summary Report (Filtered)</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a href="#" class="dropdown-item" id="downloadAllDetailedBtn">All Results - Detailed</a></li>
+                                    <li><a href="#" class="dropdown-item" id="downloadAllSummaryBtn">All Results - Summary</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -52,6 +55,20 @@
                             <p class="mt-2">Processing files...</p>
                         </div>
 
+                        <!-- Filter Section -->
+                        <div class="filter-section" id="filterSection" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filter by Generator</h6>
+                                <span class="clear-filter" id="clearFilter">Clear Filter</span>
+                            </div>
+                            <div class="row" id="generatorFilters">
+                                <!-- Generator filter buttons will be populated here -->
+                            </div>
+                            <div class="filter-summary mt-2" id="filterSummary">
+                                <!-- Filter summary will appear here -->
+                            </div>
+                        </div>
+
                         <!-- Results Area -->
                         <div class="card">
                             <div class="card-body">
@@ -61,6 +78,10 @@
                                         <div class="col">
                                             <h6 class="mb-0">Total Files</h6>
                                             <span class="h4" id="totalFiles">0</span>
+                                        </div>
+                                        <div class="col">
+                                            <h6 class="mb-0">Showing</h6>
+                                            <span class="h4 text-info" id="totalShowing">0</span>
                                         </div>
                                         <div class="col">
                                             <h6 class="mb-0">Passed</h6>
