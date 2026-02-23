@@ -488,7 +488,7 @@ function generateTextReport(type = 'detailed', useFilter = true) {
     
     report += `Files Passed: ${summary.passed}\n`;
     report += `Files Failed: ${summary.failed}\n`;
-    report += `Success Rate: ${summary.showing > 0 ? Math.round((summary.passed / summary.showing) * 100) : 0}%\n\n`;
+    //report += `Success Rate: ${summary.showing > 0 ? Math.round((summary.passed / summary.showing) * 100) : 0}%\n\n`;
     
     // Generator breakdown if not filtered
     if (!useFilter || !currentFilter) {
