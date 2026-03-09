@@ -1,6 +1,8 @@
 # T&F Multi-File XML Validator
 
-A web-based application for validating XML files against Taylor & Francis publishing specifications. This tool allows users to validate multiple XML files simultaneously, checking for correct paper weight, binding type, dimensions, and color specifications. The application now includes advanced filtering capabilities to organize results by XML generator for targeted reporting.
+A web-based application for validating XML files against Taylor & Francis publishing specifications. This tool allows users to validate multiple XML files simultaneously, checking for correct paper weight, binding type, dimensions, colour, treatment, and page extent. The application includes advanced filtering capabilities to organise results by XML generator for targeted reporting.
+
+> **Note:** The validator operates on **raw (pre-transform) XML** — the source XML as generated, before any XSL transform pipeline is applied.
 
 ## Features
 
@@ -18,45 +20,58 @@ A web-based application for validating XML files against Taylor & Francis publis
 
 The validator performs the following checks on each XML file:
 
-1. **Required Fields**: Ensures all necessary fields are present
+1. **Required Fields**: Ensures all necessary fields are present and non-empty
    - Binding Type
    - Width
    - Height
    - Paper Weight
    - Color
+   - Production Class
    - Treatment
    - Page Extent
    - Binding Style
 
-2. **Paper Weight Validation**: Validates against supported paper weights
-   - 80gsm/50lb
-   - 90gsm/60lb
+2. **Production Class**: Validates against accepted production class values
+   - `Standard`
+   - `Premium`
+   - `Complex`
+   - `Premium Inkjet (Suitable)`
 
-3. **Binding Type Compatibility**: Checks if binding type is compatible with paper weight
-   - Supports: Cased (Hardback)
-   - Supports: Limp (Paperback)
+3. **Paper Weight Validation**: Validates against supported paper weights
+   - `80gsm/50lb`
+   - `90gsm/60lb`
+   - `105gsm/70lb`
 
-4. **Binding Style Validation**: Verifies that binding style starts with a valid prefix
-   - Must start with 'Cased' or 'Limp'
+4. **Binding Type Compatibility**: Checks if binding type is compatible with the paper weight
+   - Raw XML values `Paperback` and `Hardback` are normalised to `Limp` and `Cased` respectively for the check
+   - Both bindings are supported for all paper weights
+
+5. **Binding Style Validation**: Verifies that binding style starts with a valid prefix
+   - Must start with `Cased` or `Limp`
    - Any other prefix is considered invalid
 
-5. **Dimension Validation**: Verifies if the trim size combination is valid for the specified paper weight
-   - Multiple supported dimensions per paper weight
-   - Dimensions are specified in millimeters
+6. **Dimension Validation**: Verifies the trim size combination is valid for the specified paper weight and binding type
+   - **80gsm/50lb**: Separate valid size lists for Paperback and Hardback — `127x203` is valid for Paperback only
+   - **90gsm/60lb**: 8 valid trim sizes shared across both binding types
+   - **105gsm/70lb**: No dimension restrictions
+   - All dimensions in millimeters (width × height)
 
-6. **Color Compatibility**: Ensures color specification matches paper weight requirements
-   - Single color (1)
-   - Four color (4)
-   - Scattercolor options
+7. **Color Compatibility**: Ensures colour specification matches paper weight requirements
+   - `80gsm/50lb`: Mono (`1`) only
+   - `90gsm/60lb`: Full colour (`4`) or `Scattercolor`
+   - `105gsm/70lb`: Full colour (`4`) or `Scattercolor`
 
-7. **Treatment Validation**: Validates cover treatment specification
-   - Must be either 'Gloss laminate' or 'Matt laminate'
+8. **Treatment Validation**: Validates cover treatment specification (pre-transform long form)
+   - Must be `Gloss laminate` or `Matt laminate`
    - Any other value or empty field is considered invalid
 
-8. **Page Extent Validation**: Verifies the page count is within acceptable limits
-   - Must be a positive number
-   - Must not exceed 1040 pages
-   - Empty or non-numeric values are invalid
+9. **Page Extent Validation**: Verifies the page count is within acceptable limits
+   - Must be a numeric value
+   - Minimum: **64 pages** (all paper weights)
+   - Maximum by paper weight:
+     - `80gsm/50lb`: **1040 pages**
+     - `90gsm/60lb`: **1320 pages**
+     - `105gsm/70lb`: **1320 pages**
 
 ## Generator Filtering Features
 
@@ -78,7 +93,6 @@ The validator performs the following checks on each XML file:
 ## Export and Reporting
 
 ### Flexible Download Options
-The application now provides multiple export options:
 
 #### Filtered Reports
 - **Detailed Report (Filtered)**: Complete validation details for currently filtered results
@@ -89,7 +103,7 @@ The application now provides multiple export options:
 - **All Results - Summary**: Condensed view of all results regardless of current filter
 
 ### Enhanced Report Content
-Reports now include:
+Reports include:
 - **Filter Status**: Clear indication if report is filtered or complete
 - **Generator Breakdown**: Statistics showing file counts and success rates by generator
 - **Enhanced Metadata**: Generator information, filter status, and comprehensive statistics
@@ -98,7 +112,7 @@ Reports now include:
 ### Report Naming Convention
 - Filtered reports: `validation_detailed_report_2025-07-23_John_Smith.txt`
 - Complete reports: `validation_detailed_report_2025-07-23.txt`
-- Generator names are sanitized for file system compatibility
+- Generator names are sanitised for file system compatibility
 
 ## Workflow for Multiple Generators
 
@@ -135,24 +149,24 @@ Reports now include:
 ### Key Components
 
 #### Configuration (config.js)
-Contains mapping for:
-- Binding type conversions
-- Paper weight specifications
-- Supported dimensions
-- Color options
-- Treatment options
-- Page extent limits
+Contains:
+- Binding type conversions (`BINDING_MAP`)
+- Valid production classes (`PRODUCTION_CLASSES`)
+- Valid treatments (`VALID_TREATMENTS`)
+- Page extent limits with per-grammage minimums and maximums (`PAGE_EXTENT`)
+- Paper weight specifications with binding-aware dimension sets, colour options, and binding options (`PAPER_WEIGHTS`)
 
 #### Validator (validator.js)
 Implements the `SpecificationValidator` class with methods for:
 - Required field validation
+- Production class validation
 - Paper weight validation
-- Binding type validation
-- Binding style validation
-- Dimension validation
-- Color compatibility checks
+- Binding type validation (with pre-transform normalisation)
+- Binding style prefix validation
+- Dimension validation (binding-aware for 80gsm)
+- Colour compatibility checks
 - Treatment validation
-- Page extent validation
+- Page extent validation (minimum and grammage-specific maximum)
 - Generator information extraction
 
 #### Multi-validator (multi-validator.js)
@@ -246,7 +260,7 @@ Requires modern browsers with support for:
 
 - Asynchronous file processing
 - Batch file handling
-- Optimized DOM updates
+- Optimised DOM updates
 - Efficient validation algorithms
 - Smart filter UI rendering (only when needed)
 - Minimal overhead for single-generator scenarios
@@ -257,7 +271,7 @@ The application uses a combination of:
 - Bootstrap classes for layout and components
 - Custom CSS for animations and visual feedback
 - Responsive design principles
-- Consistent color scheme for status indication
+- Consistent colour scheme for status indication
 - Subtle styling for generator information
 - Modern filter UI with hover effects and active states
 
